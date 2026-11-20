@@ -17,7 +17,7 @@
             if (this.file.files[0]) this.loadFile(this.file.files[0]);
         }.bind(this));
         this.toggle.addEventListener('click', function () {
-            if (this.enabled) this.disable('Jogador automático desativado. Você pode jogar manualmente.');
+            if (this.enabled) this.disable('Autoplayer disabled. You can play manually.');
             else this.enable();
             this.toggle.blur();
         }.bind(this));
@@ -31,17 +31,17 @@
     AutoPlayer.prototype.runner = function () { return window.Runner && window.Runner.instance_; };
 
     AutoPlayer.prototype.loadFile = async function (file) {
-        this.disable('Carregando modelo…');
+        this.disable('Loading model…');
         this.model = null;
         this.toggle.disabled = true;
         this.load.disabled = true;
         try {
-            if (file.size > 1024 * 1024) throw new Error('O modelo deve ter até 1 MB.');
+            if (file.size > 1024 * 1024) throw new Error('The model must be no larger than 1 MB.');
             this.model = window.TrexTree.validate(JSON.parse(await file.text()));
             this.toggle.disabled = false;
-            this.status.textContent = file.name + ' carregado. Ações: ' + this.model.classes.join(', ') + '. Pronto para jogar.';
+            this.status.textContent = file.name + ' loaded. Actions: ' + this.model.classes.join(', ') + '. Ready to play.';
         } catch (error) {
-            this.status.textContent = 'Não foi possível carregar: ' + error.message;
+            this.status.textContent = 'Unable to load: ' + error.message;
         } finally {
             this.load.disabled = false;
             this.file.value = '';
@@ -51,7 +51,7 @@
     AutoPlayer.prototype.enable = function () {
         var runner = this.runner();
         if (!this.model || !runner || !runner.tRex) {
-            this.status.textContent = 'Aguarde o jogo carregar e selecione um modelo.';
+            this.status.textContent = 'Wait for the game to load and select a model.';
             return;
         }
         var recorder = window.gameRecorder;
@@ -64,8 +64,8 @@
         this.enabled = true;
         this.elapsed = 50;
         this.toggle.setAttribute('aria-pressed', 'true');
-        this.toggle.textContent = 'Desativar jogador automático';
-        this.status.textContent = 'Jogador automático ativado. Pressione Esc para voltar ao controle manual.';
+        this.toggle.textContent = 'Disable autoplayer';
+        this.status.textContent = 'Autoplayer enabled. Press Esc to return to manual control.';
         this.starting = true;
         try {
             if (runner.crashed) runner.restart();
@@ -99,7 +99,7 @@
         this.enabled = false;
         this.record.disabled = false;
         this.toggle.setAttribute('aria-pressed', 'false');
-        this.toggle.textContent = 'Ativar jogador automático';
+        this.toggle.textContent = 'Enable autoplayer';
         if (message) this.status.textContent = message;
     };
 
@@ -114,9 +114,9 @@
             var action = window.TrexTree.predict(this.model, state);
             var changed = this.action !== action;
             this.apply(runner, action);
-            if (changed) this.status.textContent = 'Jogador automático ativado. Ação: ' + action + '. Esc: controle manual.';
+            if (changed) this.status.textContent = 'Autoplayer enabled. Action: ' + action + '. Esc: manual control.';
         } catch (error) {
-            this.disable('Jogador automático interrompido: ' + error.message);
+            this.disable('Autoplayer stopped: ' + error.message);
         }
     };
 

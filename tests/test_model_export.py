@@ -7,11 +7,11 @@ import unittest
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.tree import DecisionTreeClassifier
 
-from exportar_modelo import exportar_modelo
+from export_model import export_model
 
 
 class ModelExportTest(unittest.TestCase):
-    def test_javascript_produz_as_mesmas_previsoes_que_sklearn(self):
+    def test_javascript_predictions_match_sklearn(self):
         features = [
             {"obstacle_distance": float(distance), "obstacle_type": kind, "speed": 6.0}
             for kind in ("NONE", "CACTUS_SMALL", "PTERODACTYL")
@@ -28,17 +28,17 @@ class ModelExportTest(unittest.TestCase):
                    for offset in (-1e-7, 0, 1e-7)]
         expected = model.predict(encoder.transform(probes)).tolist()
         with tempfile.TemporaryDirectory() as temp:
-            path = Path(temp) / "modelo.json"
-            exportar_modelo(model, encoder, path)
+            path = Path(temp) / "model.json"
+            export_model(model, encoder, path)
             payload = {"model": json.loads(path.read_text(encoding="utf-8")), "states": probes}
             code = "const fs=require('node:fs'); const tree=require('./tree-model.js'); const d=JSON.parse(fs.readFileSync(0,'utf8')); tree.validate(d.model); console.log(JSON.stringify(d.states.map(s=>tree.predict(d.model,s))));"
             result = subprocess.run(["node", "-e", code], input=json.dumps(payload), text=True,
                                     cwd=Path(__file__).resolve().parents[1], capture_output=True, check=True)
         self.assertEqual(json.loads(result.stdout), expected)
 
-    def test_rejeita_modelo_antigo_de_resultado_binario(self):
+    def test_rejects_legacy_binary_outcome_model(self):
         encoder = DictVectorizer(sparse=False)
-        model = DecisionTreeClassifier().fit(encoder.fit_transform([{"speed": 6}, {"speed": 7}]), ["venceu", "perdeu"])
+        model = DecisionTreeClassifier().fit(encoder.fit_transform([{"speed": 6}, {"speed": 7}]), ["won", "lost"])
         with tempfile.TemporaryDirectory() as temp:
-            with self.assertRaisesRegex(ValueError, "run, duck ou jump"):
-                exportar_modelo(model, encoder, Path(temp) / "modelo.json")
+            with self.assertRaisesRegex(ValueError, "run, duck or jump"):
+                export_model(model, encoder, Path(temp) / "model.json")

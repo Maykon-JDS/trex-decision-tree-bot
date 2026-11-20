@@ -1,13 +1,13 @@
-Exemplos: 1756 | run: 1540 | duck: 5 | jump: 211
-Comparação em validação: 1404 exemplos para treinar e 352 para validar.
-Profundidade | Acurácia | F1 macro
+Samples: 1756 | run: 1540 | duck: 5 | jump: 211
+Validation comparison: 1404 samples for training and 352 for validation.
+Depth        | Accuracy | Macro F1
            2 | 0.722    | 0.519
            4 | 0.830    | 0.557
            6 | 0.909    | 0.639
            8 | 0.920    | 0.700
           12 | 0.932    | 0.795
           16 | 0.935    | 0.795
-Profundidade selecionada: 12 (maior F1 macro; menor profundidade no empate).
+Selected depth: 12 (highest macro F1; shallower tree on ties).
 
               precision    recall  f1-score   support
 
@@ -19,10 +19,10 @@ Profundidade selecionada: 12 (maior F1 macro; menor profundidade no empate).
    macro avg      0.720     0.933     0.795       352
 weighted avg      0.943     0.932     0.935       352
 
-Validação usada para escolher a profundidade; não é um teste independente. A divisão mistura amostras das partidas: registros vizinhos podem tornar as métricas otimistas.
+Validation is used to select depth; this is not an independent test. The split mixes samples from the same games: neighboring records may make metrics optimistic.
 
-Modelo final: profundidade real 12, 91 folhas.
-Resultado nos próprios dados usados para ajustar o modelo final:
+Final model: actual depth 12, 91 leaves.
+Results on the same data used to fit the final model:
               precision    recall  f1-score   support
 
          run      1.000     0.977     0.988      1540
@@ -33,4 +33,4 @@ Resultado nos próprios dados usados para ajustar o modelo final:
    macro avg      0.951     0.992     0.970      1756
 weighted avg      0.982     0.979     0.980      1756
 
-O modelo imita seus comandos. Acertar a ação gravada não garante sobreviver no jogo.
+The model imitates your commands. Predicting the recorded action correctly does not guarantee survival in the game.

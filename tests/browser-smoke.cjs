@@ -1,4 +1,4 @@
-// Optional integration check: node tests/browser-smoke.cjs path/to/modelo.json
+// Optional integration check: node tests/browser-smoke.cjs path/to/model.json
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');

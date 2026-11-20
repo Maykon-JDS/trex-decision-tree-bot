@@ -1,24 +1,26 @@
-# Ambientes e dependências locais
+# Local environments and dependencies
 .venv/
 venv/
 node_modules/
 
-# Cache e arquivos gerados
+# Caches and generated files
 __pycache__/
 *.py[cod]
 .pytest_cache/
+results/
+# Outputs from training runs created before the English file names
 resultados/
 *.log
 
-# Configurações locais e credenciais
+# Local settings and credentials
 .env
 .env.*
 !.env.example
 
-# Sistema operacional
+# Operating system
 .DS_Store
 Thumbs.db
 Desktop.ini
 
-# README será adicionado posteriormente
+# README will be added later
 /[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd]

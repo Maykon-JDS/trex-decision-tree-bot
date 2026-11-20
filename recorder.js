@@ -26,7 +26,7 @@
             this.enabled = !this.enabled;
             this.activeEpisode = false;
             this.toggle.setAttribute('aria-pressed', String(this.enabled));
-            this.toggle.textContent = this.enabled ? 'Parar gravação' : 'Iniciar gravação';
+            this.toggle.textContent = this.enabled ? 'Stop recording' : 'Start recording';
             this.render();
             this.toggle.blur();
         }.bind(this));
@@ -104,8 +104,8 @@
 
     Recorder.prototype.render = function () {
         this.download.disabled = this.rows.length === 0;
-        this.status.textContent = (this.enabled ? 'Gravação ativada' : 'Gravação desativada') +
-            '. ' + this.rows.length + ' amostras em ' + this.episode + ' trecho(s) de partida.';
+        this.status.textContent = (this.enabled ? 'Recording enabled' : 'Recording disabled') +
+            '. ' + this.rows.length + ' samples across ' + this.episode + ' game segment(s).';
     };
 
     Recorder.prototype.exportCSV = function () {
@@ -121,7 +121,7 @@
         }));
         var link = document.createElement('a');
         link.href = url;
-        link.download = 'trex-partidas-' + this.recordingId.replace(/[:.]/g, '-') + '.csv';
+        link.download = 'trex-games-' + this.recordingId.replace(/[:.]/g, '-') + '.csv';
         document.body.appendChild(link);
         link.click();
         link.remove();

@@ -34,7 +34,7 @@ function setup() {
 }
 
 test('rejects incompatible models and cycles instead of hanging', () => {
-    assert.throws(() => tree.validate({ target: 'venceu' }));
+    assert.throws(() => tree.validate({ target: 'won' }));
     const model = leaf();
     model.nodes[0] = { left: 0, right: 0, feature: 0, threshold: 20, action: null };
     assert.throws(() => tree.validate(model));
@@ -96,8 +96,8 @@ test('loading invalid JSON leaves autoplay disabled and reports the error', asyn
     await bot.loadFile({ name: 'bad.json', size: 5, text: async () => 'oops' });
     assert.equal(bot.model, null);
     assert.equal(bot.toggle.disabled, true);
-    assert.match(bot.status.textContent, /Não foi possível/);
-    await bot.loadFile({ name: 'modelo.json', size: 500, text: async () => JSON.stringify(leaf()) });
+    assert.match(bot.status.textContent, /Unable to/);
+    await bot.loadFile({ name: 'model.json', size: 500, text: async () => JSON.stringify(leaf()) });
     assert.equal(bot.toggle.disabled, false);
-    assert.match(bot.status.textContent, /Pronto para jogar/);
+    assert.match(bot.status.textContent, /Ready to play/);
 });

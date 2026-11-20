@@ -1,4 +1,4 @@
-"""Interface local para importar CSVs e visualizar a árvore treinada."""
+"""Local interface for importing CSV files and viewing the trained tree."""
 
 import csv
 import os
@@ -27,7 +27,7 @@ class TrainingApp:
         self.events = queue.Queue()
         self.process = None
         self.running = False
-        root.title("T-Rex • Treinar árvore de decisão")
+        root.title("T-Rex • Decision tree training")
         root.geometry("1120x800")
         root.minsize(850, 600)
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -38,21 +38,21 @@ class TrainingApp:
 
         main = ttk.Frame(root, padding=20)
         main.pack(fill="both", expand=True)
-        ttk.Label(main, text="Treine sua árvore de decisão", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(main, text="Importe os dados do jogo e veja as decisões com ações run, duck ou jump.").pack(anchor="w", pady=(4, 14))
+        ttk.Label(main, text="Train your decision tree", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(main, text="Import game data and inspect decisions for run, duck or jump.").pack(anchor="w", pady=(4, 14))
 
         controls = ttk.Frame(main)
         controls.pack(fill="x")
-        self.import_button = ttk.Button(controls, text="Importar CSV…", command=self.choose_files)
+        self.import_button = ttk.Button(controls, text="Import CSV…", command=self.choose_files)
         self.import_button.pack(side="left")
-        ttk.Label(controls, text="Profundidade máxima:").pack(side="left", padx=(20, 8))
+        ttk.Label(controls, text="Maximum depth:").pack(side="left", padx=(20, 8))
         self.depth = tk.StringVar(value="16")
         self.depth_input = ttk.Spinbox(controls, from_=1, to=24, width=4, textvariable=self.depth)
         self.depth_input.pack(side="left")
-        self.train_button = ttk.Button(controls, text="Treinar e desenhar árvore", command=self.start_training, state="disabled")
+        self.train_button = ttk.Button(controls, text="Train and draw tree", command=self.start_training, state="disabled")
         self.train_button.pack(side="left", padx=16)
-        ttk.Button(controls, text="Abrir jogo", command=lambda: webbrowser.open((BASE_DIR / "index.html").as_uri())).pack(side="right")
-        self.file_label = ttk.Label(main, text="Nenhum CSV selecionado.", wraplength=1000)
+        ttk.Button(controls, text="Open game", command=lambda: webbrowser.open((BASE_DIR / "index.html").as_uri())).pack(side="right")
+        self.file_label = ttk.Label(main, text="No CSV selected.", wraplength=1000)
         self.file_label.pack(anchor="w", pady=12)
 
         self.notebook = ttk.Notebook(main)
@@ -60,9 +60,9 @@ class TrainingApp:
         preview_tab = ttk.Frame(self.notebook)
         tree_tab = ttk.Frame(self.notebook)
         report_tab = ttk.Frame(self.notebook)
-        self.notebook.add(preview_tab, text="Prévia do CSV")
-        self.notebook.add(tree_tab, text="Árvore de decisão")
-        self.notebook.add(report_tab, text="Relatório")
+        self.notebook.add(preview_tab, text="CSV preview")
+        self.notebook.add(tree_tab, text="Decision tree")
+        self.notebook.add(report_tab, text="Report")
         self.tree_tab = tree_tab
 
         self.preview = ttk.Treeview(preview_tab, show="headings")
@@ -72,11 +72,11 @@ class TrainingApp:
         toolbar.pack(fill="x")
         self.view_buttons = []
         for label, command in (("−", lambda: self.zoom(0.8)), ("+", lambda: self.zoom(1.25)),
-                               ("Ajustar à janela", self.fit_image), ("Árvore completa (SVG)", self.open_full_tree)):
+                               ("Fit to window", self.fit_image), ("Full tree (SVG)", self.open_full_tree)):
             button = ttk.Button(toolbar, text=label, command=command, state="disabled")
             button.pack(side="left", padx=(0, 6))
             self.view_buttons.append(button)
-        self.folder_button = ttk.Button(toolbar, text="Abrir pasta dos resultados", command=self.open_output, state="disabled")
+        self.folder_button = ttk.Button(toolbar, text="Open output folder", command=self.open_output, state="disabled")
         self.folder_button.pack(side="right")
         self.zoom_label = ttk.Label(toolbar, text="")
         self.zoom_label.pack(side="right", padx=10)
@@ -84,15 +84,15 @@ class TrainingApp:
         canvas_frame.pack(fill="both", expand=True)
         self.canvas = tk.Canvas(canvas_frame, background="white", highlightthickness=0)
         self.add_scrollbars(canvas_frame, self.canvas)
-        self.canvas.create_text(350, 150, text="Importe um CSV e clique em Treinar para ver a árvore.", fill="#666")
+        self.canvas.create_text(350, 150, text="Import a CSV and click Train to view the tree.", fill="#666")
 
         self.report = tk.Text(report_tab, wrap="word", font=("Consolas", 11), state="disabled", padx=12, pady=12)
         self.add_scrollbars(report_tab, self.report)
-        ttk.Label(main, text="run: correr  •  duck: abaixar / acelerar queda  •  jump: pular").pack(anchor="w", pady=(12, 4))
-        ttk.Label(main, text="A profundidade é comparada em validação; o modelo final usa todos os exemplos. A árvore aprende seus comandos.").pack(anchor="w")
+        ttk.Label(main, text="run: keep running  •  duck: crouch / fall faster  •  jump: jump").pack(anchor="w", pady=(12, 4))
+        ttk.Label(main, text="Depths are compared using validation; the final model uses all samples. The tree learns your commands.").pack(anchor="w")
         self.progress = ttk.Progressbar(main, mode="indeterminate")
         self.progress.pack(fill="x", pady=(10, 4))
-        self.status = tk.StringVar(value="Selecione um ou mais arquivos CSV baixados do jogo.")
+        self.status = tk.StringVar(value="Select one or more CSV files downloaded from the game.")
         ttk.Label(main, textvariable=self.status, wraplength=1000).pack(anchor="w")
         root.after(100, self.poll)
 
@@ -108,7 +108,7 @@ class TrainingApp:
         widget.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
 
     def choose_files(self):
-        paths = filedialog.askopenfilenames(title="Importar partidas do T-Rex", filetypes=[("Arquivos CSV", "*.csv")])
+        paths = filedialog.askopenfilenames(title="Import T-Rex recordings", filetypes=[("CSV files", "*.csv")])
         if paths:
             self.load_files(paths)
 
@@ -118,13 +118,13 @@ class TrainingApp:
                 reader = csv.DictReader(file)
                 columns = reader.fieldnames
                 if not columns:
-                    raise ValueError("O arquivo está vazio ou não contém cabeçalho.")
+                    raise ValueError("The file is empty or has no header.")
                 # Only a small preview is loaded; training reads every selected file.
                 rows = []
                 for _, row in zip(range(100), reader):
                     rows.append([row.get(column, "") for column in columns])
         except (OSError, ValueError, csv.Error) as error:
-            messagebox.showerror("Não foi possível importar", str(error), parent=self.root)
+            messagebox.showerror("Unable to import", str(error), parent=self.root)
             return
         self.paths = [Path(path) for path in paths]
         self.preview.delete(*self.preview.get_children())
@@ -134,10 +134,10 @@ class TrainingApp:
             self.preview.column(column, width=135, stretch=False)
         for row in rows:
             self.preview.insert("", "end", values=row)
-        self.file_label.configure(text="Selecionados: " + "; ".join(str(path) for path in self.paths))
+        self.file_label.configure(text="Selected: " + "; ".join(str(path) for path in self.paths))
         self.train_button.configure(state="normal")
         self.notebook.select(0)
-        self.status.set(f"{len(paths)} arquivo(s) selecionado(s). Prévia de até 100 linhas do primeiro arquivo. Pronto para treinar.")
+        self.status.set(f"{len(paths)} file(s) selected. Previewing up to 100 rows from the first file. Ready to train.")
 
     def start_training(self):
         if self.running or not self.paths:
@@ -147,28 +147,28 @@ class TrainingApp:
             if not 1 <= depth <= 24:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Profundidade inválida", "Escolha um número inteiro entre 1 e 24.", parent=self.root)
+            messagebox.showerror("Invalid depth", "Choose an integer between 1 and 24.", parent=self.root)
             return
         self.running = True
         for widget in (self.import_button, self.train_button, self.depth_input):
             widget.configure(state="disabled")
         self.progress.start()
-        self.status.set("Treinando e gerando o desenho…")
-        output = BASE_DIR / "resultados" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+        self.status.set("Training and generating the diagram…")
+        output = BASE_DIR / "results" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         threading.Thread(target=self.worker, args=(list(self.paths), depth, output), daemon=True).start()
 
     def worker(self, paths, depth, output):
         try:
             env = os.environ.copy()
             env["PYTHONIOENCODING"] = "utf-8"
-            command = [sys.executable, str(BASE_DIR / "treinar_arvore.py"), *map(str, paths),
-                       "--profundidade", str(depth), "--saida", str(output), "--sem-janela"]
+            command = [sys.executable, str(BASE_DIR / "train_tree.py"), *map(str, paths),
+                       "--depth", str(depth), "--output", str(output), "--no-window"]
             self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                             text=True, encoding="utf-8", env=env,
                                             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
             stdout, stderr = self.process.communicate()
             if self.process.returncode:
-                raise RuntimeError(stderr.strip() or stdout.strip() or "Falha ao treinar a árvore.")
+                raise RuntimeError(stderr.strip() or stdout.strip() or "Failed to train the tree.")
             self.events.put((True, output, stdout))
         except Exception as error:
             self.events.put((False, output, str(error)))
@@ -192,21 +192,21 @@ class TrainingApp:
                 self.folder_button.configure(state="normal")
                 try:
                     from PIL import Image
-                    with Image.open(output / "arvore.png") as image:
+                    with Image.open(output / "tree.png") as image:
                         self.original_image = image.copy()
                     for button in self.view_buttons:
                         button.configure(state="normal")
                     self.notebook.select(self.tree_tab)
                     self.root.update_idletasks()
                     self.fit_image()
-                    self.status.set(f"Concluído. Abra o jogo e carregue modelo.json da pasta {output}")
+                    self.status.set(f"Done. Open the game and load model.json from {output}")
                 except Exception as error:
-                    self.status.set(f"Árvore salva em {output}. Não foi possível exibir a prévia.")
-                    messagebox.showerror("Erro ao exibir desenho", str(error), parent=self.root)
+                    self.status.set(f"Tree saved to {output}. Unable to display the preview.")
+                    messagebox.showerror("Error displaying diagram", str(error), parent=self.root)
             else:
-                self.status.set("Não foi possível treinar. Confira o arquivo e tente novamente.")
+                self.status.set("Unable to train. Check the file and try again.")
                 self.notebook.select(2)
-                messagebox.showerror("Erro no treinamento", text, parent=self.root)
+                messagebox.showerror("Training error", text, parent=self.root)
         self.root.after(100, self.poll)
 
     def fit_image(self):
@@ -233,7 +233,7 @@ class TrainingApp:
 
     def open_full_tree(self):
         if self.output_dir:
-            os.startfile(self.output_dir / "arvore.svg")
+            os.startfile(self.output_dir / "tree.svg")
 
     def open_output(self):
         if self.output_dir:

@@ -5,7 +5,7 @@
     var actions = ['run', 'duck', 'jump'];
 
     function validate(model) {
-        function invalid() { throw new Error('Modelo incompatível. Selecione o modelo.json exportado pelo treinamento de ações.'); }
+        function invalid() { throw new Error('Incompatible model. Select the model.json exported by action training.'); }
         if (!model || model.format !== 'trex-decision-tree' || model.version !== 1 ||
             model.target !== 'action' || model.input_schema !== 1 || model.interval_ms !== 50) invalid();
         if (!Array.isArray(model.classes) || !model.classes.length ||
@@ -48,12 +48,12 @@
                 value = Number(state.obstacle_type === name.slice('obstacle_type='.length));
             } else {
                 value = state[name] == null ? -1 : state[name];
-                if (!Number.isFinite(value)) throw new Error('Estado do jogo inválido: ' + name);
+                if (!Number.isFinite(value)) throw new Error('Invalid game state: ' + name);
             }
             // sklearn converts input values to float32 before traversing the tree.
             index = Math.fround(value) <= node.threshold ? node.left : node.right;
         }
-        throw new Error('Não foi possível percorrer a árvore.');
+        throw new Error('Unable to traverse the tree.');
     }
     var api = { validate: validate, predict: predict };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;

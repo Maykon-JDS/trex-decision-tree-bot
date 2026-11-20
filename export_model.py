@@ -1,14 +1,14 @@
-"""Exporta um modelo de ações já treinado para o jogador JavaScript."""
+"""Export an already trained action model for the JavaScript player."""
 
 import argparse
 import json
 from pathlib import Path
 
 
-def exportar_modelo(model, encoder, path):
+def export_model(model, encoder, path):
     classes = list(model.classes_)
     if not classes or not set(classes) <= {"run", "duck", "jump"}:
-        raise ValueError("O modelo precisa prever run, duck ou jump. Treine novamente o modelo de ações.")
+        raise ValueError("The model must predict run, duck or jump. Retrain the action model.")
     tree = model.tree_
     nodes = []
     for index in range(tree.node_count):
@@ -32,16 +32,16 @@ def main():
     from joblib import load
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("modelo", type=Path, help="Caminho do modelo.joblib treinado neste projeto")
-    parser.add_argument("--saida", type=Path, help="Caminho do JSON (padrão: ao lado do modelo)")
+    parser.add_argument("model", type=Path, help="Path to a model.joblib file trained with this project")
+    parser.add_argument("--output", type=Path, help="JSON output path (default: next to the model)")
     args = parser.parse_args()
     try:
-        bundle = load(args.modelo)
-        destination = args.saida or args.modelo.with_suffix(".json")
-        exportar_modelo(bundle["model"], bundle["encoder"], destination)
-        print(f"Modelo para o jogo: {destination.resolve()}")
+        bundle = load(args.model)
+        destination = args.output or args.model.with_suffix(".json")
+        export_model(bundle["model"], bundle["encoder"], destination)
+        print(f"Game model: {destination.resolve()}")
     except (ValueError, OSError, KeyError) as error:
-        parser.exit(1, f"Erro: {error}\n")
+        parser.exit(1, f"Error: {error}\n")
 
 
 if __name__ == "__main__":

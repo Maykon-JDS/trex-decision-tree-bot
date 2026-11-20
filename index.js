@@ -677,7 +677,7 @@
          */
         onKeyDown: function (e) {
             if (window.autoPlayer && window.autoPlayer.enabled && !e.automated) {
-                if (e.keyCode === 27) window.autoPlayer.disable('Jogador automático desativado.');
+                if (e.keyCode === 27) window.autoPlayer.disable('Autoplayer disabled.');
                 else return;
             }
             if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls')) return;
@@ -730,7 +730,7 @@
          */
         onKeyUp: function (e) {
             if (window.autoPlayer && window.autoPlayer.enabled && !e.automated) {
-                if (e.keyCode === 27) window.autoPlayer.disable('Jogador automático desativado.');
+                if (e.keyCode === 27) window.autoPlayer.disable('Autoplayer disabled.');
                 else return;
             }
             if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls')) return;
@@ -794,7 +794,7 @@
          * Game over state.
          */
         gameOver: function () {
-            if (window.autoPlayer) window.autoPlayer.disable('Colisão. Ative novamente para tentar outra partida.');
+            if (window.autoPlayer) window.autoPlayer.disable('Collision. Enable the autoplayer again to start another game.');
             if (window.gameRecorder) window.gameRecorder.end(this);
             this.playSound(this.soundFx.HIT);
             vibrate(200);
