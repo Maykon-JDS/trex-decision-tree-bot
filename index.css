@@ -9,6 +9,37 @@ html, body {
   height: 100%;
 }
 
+:is(#recording-controls, #autoplay-controls) {
+  position: relative;
+  z-index: 3;
+  box-sizing: border-box;
+  max-width: 600px;
+  margin: 24px auto 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fafafa;
+  color: #303030;
+  font: 14px/1.5 Arial, sans-serif;
+}
+
+:is(#recording-controls, #autoplay-controls) h2 { margin: 0; font-size: 18px; }
+.recording-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+:is(#recording-controls, #autoplay-controls) button {
+  padding: 10px 16px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: white;
+  color: #303030;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+:is(#recording-controls, #autoplay-controls) button[aria-pressed="true"] { background: #ad2525; color: white; }
+:is(#recording-controls, #autoplay-controls) button:disabled { opacity: .5; cursor: default; }
+:is(#recording-controls, #autoplay-controls) button:focus-visible { outline: 3px solid #2373c8; outline-offset: 3px; }
+.recording-note { color: #606060; font-size: 12px; }
+
 .icon {
   -webkit-user-select: none;
   user-select: none;
@@ -163,3 +194,7 @@ html, body {
   transition: transform 250ms cubic-bezier(0.4, 0, 1, 1) 400ms;
   z-index: 2;
 }
+
+/* Reserve a stable area for the canvas above the recording panel. */
+.offline .interstitial-wrapper { position: relative; height: 170px; padding-top: 0; margin-bottom: 0; }
+.offline .runner-container { top: 0; }

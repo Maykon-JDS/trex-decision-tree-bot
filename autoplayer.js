@@ -1,0 +1,140 @@
+(function () {
+    'use strict';
+
+    function AutoPlayer() {
+        this.model = null;
+        this.enabled = false;
+        this.action = null;
+        this.elapsed = 50;
+        this.starting = false;
+        this.toggle = document.getElementById('autoplay-toggle');
+        this.load = document.getElementById('model-load');
+        this.file = document.getElementById('model-file');
+        this.status = document.getElementById('autoplay-status');
+        this.record = document.getElementById('record-toggle');
+        this.load.addEventListener('click', function () { this.file.click(); this.load.blur(); }.bind(this));
+        this.file.addEventListener('change', function () {
+            if (this.file.files[0]) this.loadFile(this.file.files[0]);
+        }.bind(this));
+        this.toggle.addEventListener('click', function () {
+            if (this.enabled) this.disable('Jogador automático desativado. Você pode jogar manualmente.');
+            else this.enable();
+            this.toggle.blur();
+        }.bind(this));
+        ['touchstart', 'touchend', 'mousedown', 'mouseup'].forEach(function (type) {
+            document.getElementById('autoplay-controls').addEventListener(type, function (event) {
+                event.stopPropagation();
+            });
+        });
+    }
+
+    AutoPlayer.prototype.runner = function () { return window.Runner && window.Runner.instance_; };
+
+    AutoPlayer.prototype.loadFile = async function (file) {
+        this.disable('Carregando modelo…');
+        this.model = null;
+        this.toggle.disabled = true;
+        this.load.disabled = true;
+        try {
+            if (file.size > 1024 * 1024) throw new Error('O modelo deve ter até 1 MB.');
+            this.model = window.TrexTree.validate(JSON.parse(await file.text()));
+            this.toggle.disabled = false;
+            this.status.textContent = file.name + ' carregado. Ações: ' + this.model.classes.join(', ') + '. Pronto para jogar.';
+        } catch (error) {
+            this.status.textContent = 'Não foi possível carregar: ' + error.message;
+        } finally {
+            this.load.disabled = false;
+            this.file.value = '';
+        }
+    };
+
+    AutoPlayer.prototype.enable = function () {
+        var runner = this.runner();
+        if (!this.model || !runner || !runner.tRex) {
+            this.status.textContent = 'Aguarde o jogo carregar e selecione um modelo.';
+            return;
+        }
+        var recorder = window.gameRecorder;
+        if (recorder) {
+            if (recorder.enabled) recorder.toggle.click();
+            recorder.release();
+        }
+        this.record.disabled = true;
+        this.release(runner);
+        this.enabled = true;
+        this.elapsed = 50;
+        this.toggle.setAttribute('aria-pressed', 'true');
+        this.toggle.textContent = 'Desativar jogador automático';
+        this.status.textContent = 'Jogador automático ativado. Pressione Esc para voltar ao controle manual.';
+        this.starting = true;
+        try {
+            if (runner.crashed) runner.restart();
+            else if (!runner.playing && runner.activated) {
+                runner.tRex.reset();
+                runner.play();
+            } else if (!runner.playing) {
+                // Use the game's first jump to start its original intro and sounds.
+                var event = { keyCode: 32, type: 'keydown', target: runner.canvas,
+                    automated: true, preventDefault: function () {} };
+                runner.onKeyDown(event);
+                event.type = 'keyup';
+                runner.onKeyUp(event);
+            }
+            document.getElementById('messageBox').style.visibility = 'hidden';
+        } finally { this.starting = false; }
+    };
+
+    AutoPlayer.prototype.release = function (runner) {
+        if (runner && runner.tRex) {
+            if (this.action === 'jump') runner.tRex.endJump();
+            runner.tRex.speedDrop = false;
+            if (runner.tRex.ducking) runner.tRex.setDuck(false);
+        }
+        this.action = null;
+        this.elapsed = 50;
+    };
+
+    AutoPlayer.prototype.disable = function (message) {
+        this.release(this.runner());
+        this.enabled = false;
+        this.record.disabled = false;
+        this.toggle.setAttribute('aria-pressed', 'false');
+        this.toggle.textContent = 'Ativar jogador automático';
+        if (message) this.status.textContent = message;
+    };
+
+    AutoPlayer.prototype.tick = function (runner, deltaTime) {
+        if (!this.enabled || this.starting || !runner.playing || runner.crashed ||
+            !runner.activated || runner.playingIntro) return;
+        this.elapsed += Math.max(0, deltaTime);
+        if (this.elapsed < 50) return;
+        this.elapsed = 0;
+        try {
+            var state = window.TrexState.read(runner);
+            var action = window.TrexTree.predict(this.model, state);
+            var changed = this.action !== action;
+            this.apply(runner, action);
+            if (changed) this.status.textContent = 'Jogador automático ativado. Ação: ' + action + '. Esc: controle manual.';
+        } catch (error) {
+            this.disable('Jogador automático interrompido: ' + error.message);
+        }
+    };
+
+    AutoPlayer.prototype.apply = function (runner, action) {
+        var trex = runner.tRex;
+        if (this.action === 'jump' && action !== 'jump') trex.endJump();
+        if (action !== 'duck') {
+            trex.speedDrop = false;
+            if (trex.ducking) trex.setDuck(false);
+        }
+        if (action === 'jump' && !trex.jumping) {
+            trex.startJump(runner.currentSpeed);
+        } else if (action === 'duck') {
+            if (trex.jumping && !trex.speedDrop) trex.setSpeedDrop();
+            else if (!trex.jumping && !trex.ducking) trex.setDuck(true);
+        }
+        this.action = action;
+    };
+
+    document.addEventListener('DOMContentLoaded', function () { window.autoPlayer = new AutoPlayer(); });
+})();

@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="pt-BR">
 
 <head>
     <meta charset="utf-8">
@@ -8,12 +8,15 @@
     <link rel="stylesheet" href="index.css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
     <script src="index.js"></script>
+    <script src="game-state.js"></script>
+    <script src="tree-model.js"></script>
+    <script src="recorder.js"></script>
+    <script src="autoplayer.js"></script>
 </head>
 
 <body id="t" class="offline">
     <div id="messageBox" class="sendmessage">
-         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Press Space to start</h1>
-         <div class="niokbutton" onclick="okbuttonsend()"></div>
+         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Pressione Espaço para começar</h1>
     </div>
     <div id="main-frame-error" class="interstitial-wrapper">
         <div id="main-content">
@@ -29,6 +32,27 @@
             </template>
         </div>
     </div>
+    <section id="recording-controls" aria-label="Gravação de partidas">
+        <h2>Dados para treinamento</h2>
+        <p>Ative a gravação e jogue normalmente. Espaço ou ↑: pular. ↓: abaixar.</p>
+        <div class="recording-buttons">
+            <button id="record-toggle" type="button" aria-pressed="false">Iniciar gravação</button>
+            <button id="record-download" type="button" disabled>Baixar CSV</button>
+        </div>
+        <p id="record-status" role="status" aria-live="polite">Gravação desativada. 0 amostras.</p>
+        <p class="recording-note">Os dados ficam apenas nesta aba. Baixe o CSV antes de fechar ou atualizar a página.</p>
+    </section>
+    <section id="autoplay-controls" class="game-controls" aria-label="Jogador automático">
+        <h2>Jogador automático</h2>
+        <p>Carregue o modelo.json gerado pelo treinamento e deixe a árvore jogar.</p>
+        <div class="recording-buttons">
+            <button id="model-load" type="button">Carregar modelo…</button>
+            <input id="model-file" type="file" accept=".json,application/json" hidden>
+            <button id="autoplay-toggle" type="button" aria-pressed="false" disabled>Ativar jogador automático</button>
+        </div>
+        <p id="autoplay-status" role="status" aria-live="polite">Nenhum modelo carregado.</p>
+        <p class="recording-note">A gravação fica desativada enquanto a árvore joga. Após uma colisão, ative novamente para tentar outra partida.</p>
+    </section>
 </body>
 
 <script>

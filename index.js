@@ -426,7 +426,7 @@
 
             this.dimensions.WIDTH = this.outerContainerEl.offsetWidth - padding * 2;
             this.dimensions.WIDTH = Math.min(DEFAULT_WIDTH, this.dimensions.WIDTH); //Arcade Mode
-            if (this.activated) {
+            if (this.activated && document.body.classList.contains(Runner.classes.ARCADE_MODE)) {
                 this.setArcadeModeContainerScale();
             }
             
@@ -502,7 +502,7 @@
          * Update the game status to started.
          */
         startGame: function () {
-            this.setArcadeMode();
+            // Keep the game in its original canvas so recording controls stay visible.
             this.runningTime = 0;
             this.playingIntro = false;
             this.tRex.playingIntro = false;
@@ -536,6 +536,10 @@
             this.time = now;
 
             if (this.playing) {
+                if (window.autoPlayer) window.autoPlayer.tick(this, deltaTime);
+                if (window.gameRecorder) {
+                    window.gameRecorder.sample(this, deltaTime);
+                }
                 this.clearCanvas();
 
                 if (this.tRex.jumping) {
@@ -672,6 +676,12 @@
          * @param {Event} e
          */
         onKeyDown: function (e) {
+            if (window.autoPlayer && window.autoPlayer.enabled && !e.automated) {
+                if (e.keyCode === 27) window.autoPlayer.disable('Jogador automático desativado.');
+                else return;
+            }
+            if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls')) return;
+            if (window.gameRecorder) window.gameRecorder.input(this, e, true);
             // Prevent native page scrolling whilst tapping on mobile.
             if (IS_MOBILE && this.playing) {
                 e.preventDefault();
@@ -719,6 +729,12 @@
          * @param {Event} e
          */
         onKeyUp: function (e) {
+            if (window.autoPlayer && window.autoPlayer.enabled && !e.automated) {
+                if (e.keyCode === 27) window.autoPlayer.disable('Jogador automático desativado.');
+                else return;
+            }
+            if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls')) return;
+            if (window.gameRecorder) window.gameRecorder.input(this, e, false);
             var keyCode = String(e.keyCode);
             var isjumpKey = Runner.keycodes.JUMP[keyCode] ||
                 e.type == Runner.events.TOUCHEND ||
@@ -778,6 +794,8 @@
          * Game over state.
          */
         gameOver: function () {
+            if (window.autoPlayer) window.autoPlayer.disable('Colisão. Ative novamente para tentar outra partida.');
+            if (window.gameRecorder) window.gameRecorder.end(this);
             this.playSound(this.soundFx.HIT);
             vibrate(200);
 
@@ -807,6 +825,8 @@
         },
 
         stop: function () {
+            if (window.autoPlayer) window.autoPlayer.release(this);
+            if (window.gameRecorder) window.gameRecorder.release();
             this.playing = false;
             this.paused = true;
             cancelAnimationFrame(this.raqId);

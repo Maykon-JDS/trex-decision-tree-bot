@@ -1,0 +1,36 @@
+Exemplos: 1756 | run: 1540 | duck: 5 | jump: 211
+Comparação em validação: 1404 exemplos para treinar e 352 para validar.
+Profundidade | Acurácia | F1 macro
+           2 | 0.722    | 0.519
+           4 | 0.830    | 0.557
+           6 | 0.909    | 0.639
+           8 | 0.920    | 0.700
+          12 | 0.932    | 0.795
+          16 | 0.935    | 0.795
+Profundidade selecionada: 12 (maior F1 macro; menor profundidade no empate).
+
+              precision    recall  f1-score   support
+
+         run      0.980     0.942     0.960       309
+        duck      0.500     1.000     0.667         1
+        jump      0.679     0.857     0.758        42
+
+    accuracy                          0.932       352
+   macro avg      0.720     0.933     0.795       352
+weighted avg      0.943     0.932     0.935       352
+
+Validação usada para escolher a profundidade; não é um teste independente. A divisão mistura amostras das partidas: registros vizinhos podem tornar as métricas otimistas.
+
+Modelo final: profundidade real 12, 91 folhas.
+Resultado nos próprios dados usados para ajustar o modelo final:
+              precision    recall  f1-score   support
+
+         run      1.000     0.977     0.988      1540
+        duck      1.000     1.000     1.000         5
+        jump      0.854     1.000     0.921       211
+
+    accuracy                          0.979      1756
+   macro avg      0.951     0.992     0.970      1756
+weighted avg      0.982     0.979     0.980      1756
+
+O modelo imita seus comandos. Acertar a ação gravada não garante sobreviver no jogo.
