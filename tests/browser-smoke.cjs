@@ -1,4 +1,4 @@
-// Optional integration check: node tests/browser-smoke.cjs path/to/model.json [--default]
+// Optional integration check: node tests/browser-smoke.cjs path/to/model.json [--default|--default-file]
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -12,10 +12,10 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     const base = path.resolve(__dirname, '..');
     const modelPath = path.resolve(process.argv[2]);
     assert.ok(fs.existsSync(modelPath));
-    const useDefault = process.argv.includes('--default');
+    const useDefault = process.argv.includes('--default') || process.argv.includes('--default-file');
     let server;
     let pageUrl = pathToFileURL(path.join(base, 'index.html')).href;
-    if (useDefault) {
+    if (process.argv.includes('--default')) {
         // A project subdirectory catches absolute-path bugs before GitHub Pages deployment.
         const prefix = '/trex-decision-tree-bot/';
         server = http.createServer((request, response) => {
@@ -87,6 +87,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         }
         assert.ok(ready, 'Game did not initialize');
         if (useDefault) {
+            await evaluate("window.fetch = function () { throw new Error('Default model must work without fetch'); }");
             await evaluate("document.getElementById('model-default').click()");
         } else {
             const document = await send('DOM.getDocument');

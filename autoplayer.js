@@ -37,10 +37,9 @@
     AutoPlayer.prototype.runner = function () { return window.Runner && window.Runner.instance_; };
 
     AutoPlayer.prototype.loadDefault = function () {
-        return this.loadModel('Default model', async function () {
-            var response = await fetch('examples/trained-model/model.json');
-            if (!response.ok) throw new Error('Default model request failed (HTTP ' + response.status + ').');
-            return response.text();
+        return this.loadModel('Default model', function () {
+            if (!window.TrexDefaultModel) throw new Error('Default model is unavailable. Reload the page or load model.json manually.');
+            return JSON.stringify(window.TrexDefaultModel);
         });
     };
 

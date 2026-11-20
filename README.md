@@ -220,12 +220,12 @@ cd trex-decision-tree-bot
 
 ### Try the included model
 
-1. Open the hosted game in a modern browser, or serve it locally as described below.
+1. Open the hosted game or the local `index.html` file in a modern browser.
 2. In **Autoplayer**, click **Default model** to load the included trained tree.
 3. Click **Enable autoplayer**. The game starts automatically.
 4. Press **Esc** or click **Disable autoplayer** to return to manual control.
 
-To use a custom model, click **Load model…** and choose its JSON file. When opening `index.html` directly from disk, use this file picker to select `examples/trained-model/model.json`; the **Default model** button requires the hosted page or a local HTTP server.
+To use a custom model, click **Load model…** and choose its JSON file. The **Default model** button uses the tree bundled with the page, so it also works when opening `index.html` directly from disk without an HTTP server.
 
 After a collision, enable the autoplayer again to start another game. Switching tabs pauses the game. Manual recording is disabled while the bot plays.
 
@@ -398,6 +398,8 @@ To verify the **Default model** button over HTTP under a project subdirectory, a
 ```sh
 node tests/browser-smoke.cjs examples/trained-model/model.json --default
 ```
+
+Use `--default-file` instead to check the same button when opening `index.html` directly from disk. Both default-model checks disable `fetch` to verify that loading does not depend on it.
 
 The browser check requires a Node.js version providing global `fetch` and `WebSocket` (such as Node.js 22+) and Chrome. It defaults to the standard Windows Chrome installation path; set `CHROME_PATH` for another installation. The check writes its screenshot to `.venv/autoplay-smoke.png`, so create the environment directory first.
 
