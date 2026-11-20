@@ -52,7 +52,7 @@ Each diagram box contains a condition: follow the left branch when it is true an
 
 ## Example model
 
-The `examples/trained-model/` directory includes a ready-to-use trained model: `model.json` for the browser, `model.joblib` for Python and `report.txt` with its metrics. In the game, click **Load model…**, select this JSON and enable the autoplayer. The example was trained on 1,756 samples and predicts `run`, `duck` and `jump`. Only five samples represent `duck`, so this action has limited coverage.
+The `examples/trained-model/` directory includes a ready-to-use trained model: `model.json` for the browser, `model.joblib` for Python and `report.txt` with its metrics. On the hosted game or a local HTTP server, click **Default model**, then **Enable autoplayer**. When opening `index.html` directly from disk, click **Load model…** and select the example JSON instead. The example was trained on 1,756 samples and predicts `run`, `duck` and `jump`. Only five samples represent `duck`, so this action has limited coverage.
 
 ## Let the tree play
 

@@ -12,7 +12,7 @@ function leaf(action = 'run') {
         nodes: [{ left: -1, right: -1, feature: -2, threshold: -2, action }] };
 }
 
-function setup() {
+function setup(fetchModel) {
     const elements = {};
     function element() { return { events: {}, style: {}, disabled: false, addEventListener(t, fn) { this.events[t] = fn; },
         setAttribute() {}, blur() {}, click() { this.events.click?.(); } }; }
@@ -26,7 +26,7 @@ function setup() {
     let ready;
     const recorder = { enabled: true, release() { this.released = true; }, toggle: { click() { recorder.enabled = false; } } };
     const window = { TrexTree: tree, TrexState: state, Runner: { instance_: runner }, gameRecorder: recorder };
-    const context = { window, document: { getElementById(id) { return elements[id] ||= element(); },
+    const context = { window, fetch: fetchModel, document: { getElementById(id) { return elements[id] ||= element(); },
         addEventListener(t, fn) { ready = fn; } } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../autoplayer.js'), 'utf8'), context);
     ready();
@@ -100,4 +100,51 @@ test('loading invalid JSON leaves autoplay disabled and reports the error', asyn
     await bot.loadFile({ name: 'model.json', size: 500, text: async () => JSON.stringify(leaf()) });
     assert.equal(bot.toggle.disabled, false);
     assert.match(bot.status.textContent, /Ready to play/);
+});
+
+test('default model button loads the bundled tree and stops active autoplay', async () => {
+    const bundled = fs.readFileSync(path.join(__dirname, '../examples/trained-model/model.json'), 'utf8');
+    let finish;
+    const { bot, elements } = setup(url => {
+        assert.equal(url, 'examples/trained-model/model.json');
+        return new Promise(resolve => { finish = () => resolve({ ok: true, text: async () => bundled }); });
+    });
+    bot.model = tree.validate(leaf());
+    bot.enable();
+    const loading = elements['model-default'].events.click();
+    assert.equal(bot.enabled, false);
+    assert.equal(bot.model, null);
+    assert.equal(elements['autoplay-toggle'].disabled, true);
+    assert.equal(elements['model-default'].disabled, true);
+    assert.equal(elements['model-load'].disabled, true);
+    finish();
+    await loading;
+    assert.equal(bot.model.nodes.length, JSON.parse(bundled).nodes.length);
+    assert.equal(elements['autoplay-toggle'].disabled, false);
+    assert.equal(elements['model-default'].disabled, false);
+    assert.equal(elements['model-load'].disabled, false);
+    assert.match(bot.status.textContent, /Default model loaded/);
+    await bot.loadFile({ name: 'custom.json', size: 500, text: async () => JSON.stringify(leaf('duck')) });
+    assert.equal(bot.model.nodes[0].action, 'duck');
+    assert.match(bot.status.textContent, /custom.json loaded/);
+});
+
+test('default model failures leave controls usable and allow a retry', async () => {
+    const responses = [
+        async () => { throw new Error('Network unavailable'); },
+        async () => ({ ok: false, status: 404 }),
+        async () => ({ ok: true, text: async () => '{"target":"invalid"}' }),
+        async () => ({ ok: true, text: async () => JSON.stringify(leaf()) })
+    ];
+    const { bot } = setup(() => responses.shift()());
+    for (const message of [/Network unavailable/, /HTTP 404/, /Incompatible model/]) {
+        await bot.loadDefault();
+        assert.equal(bot.model, null);
+        assert.equal(bot.toggle.disabled, true);
+        assert.equal(bot.defaultModel.disabled, false);
+        assert.equal(bot.load.disabled, false);
+        assert.match(bot.status.textContent, message);
+    }
+    await bot.loadDefault();
+    assert.equal(bot.toggle.disabled, false);
 });

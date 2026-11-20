@@ -7,11 +7,17 @@
         this.action = null;
         this.elapsed = 50;
         this.starting = false;
+        this.loading = false;
         this.toggle = document.getElementById('autoplay-toggle');
+        this.defaultModel = document.getElementById('model-default');
         this.load = document.getElementById('model-load');
         this.file = document.getElementById('model-file');
         this.status = document.getElementById('autoplay-status');
         this.record = document.getElementById('record-toggle');
+        this.defaultModel.addEventListener('click', function () {
+            this.defaultModel.blur();
+            return this.loadDefault();
+        }.bind(this));
         this.load.addEventListener('click', function () { this.file.click(); this.load.blur(); }.bind(this));
         this.file.addEventListener('change', function () {
             if (this.file.files[0]) this.loadFile(this.file.files[0]);
@@ -30,20 +36,39 @@
 
     AutoPlayer.prototype.runner = function () { return window.Runner && window.Runner.instance_; };
 
-    AutoPlayer.prototype.loadFile = async function (file) {
+    AutoPlayer.prototype.loadDefault = function () {
+        return this.loadModel('Default model', async function () {
+            var response = await fetch('examples/trained-model/model.json');
+            if (!response.ok) throw new Error('Default model request failed (HTTP ' + response.status + ').');
+            return response.text();
+        });
+    };
+
+    AutoPlayer.prototype.loadFile = function (file) {
+        return this.loadModel(file.name, async function () {
+            if (file.size > 1024 * 1024) throw new Error('The model must be no larger than 1 MB.');
+            return file.text();
+        });
+    };
+
+    AutoPlayer.prototype.loadModel = async function (name, readText) {
+        if (this.loading) return;
+        this.loading = true;
         this.disable('Loading model…');
         this.model = null;
         this.toggle.disabled = true;
         this.load.disabled = true;
+        this.defaultModel.disabled = true;
         try {
-            if (file.size > 1024 * 1024) throw new Error('The model must be no larger than 1 MB.');
-            this.model = window.TrexTree.validate(JSON.parse(await file.text()));
+            this.model = window.TrexTree.validate(JSON.parse(await readText()));
             this.toggle.disabled = false;
-            this.status.textContent = file.name + ' loaded. Actions: ' + this.model.classes.join(', ') + '. Ready to play.';
+            this.status.textContent = name + ' loaded. Actions: ' + this.model.classes.join(', ') + '. Ready to play.';
         } catch (error) {
             this.status.textContent = 'Unable to load: ' + error.message;
         } finally {
             this.load.disabled = false;
+            this.defaultModel.disabled = false;
+            this.loading = false;
             this.file.value = '';
         }
     };

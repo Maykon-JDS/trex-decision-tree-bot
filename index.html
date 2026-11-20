@@ -44,8 +44,9 @@
     </section>
     <section id="autoplay-controls" class="game-controls" aria-label="Autoplayer">
         <h2>Autoplayer</h2>
-        <p>Load the model.json exported by training and let the tree play.</p>
+        <p>Choose the default trained model or load your own model.json, then enable the autoplayer.</p>
         <div class="recording-buttons">
+            <button id="model-default" type="button">Default model</button>
             <button id="model-load" type="button">Load model…</button>
             <input id="model-file" type="file" accept=".json,application/json" hidden>
             <button id="autoplay-toggle" type="button" aria-pressed="false" disabled>Enable autoplayer</button>

@@ -1,16 +1,41 @@
-// Optional integration check: node tests/browser-smoke.cjs path/to/model.json
+// Optional integration check: node tests/browser-smoke.cjs path/to/model.json [--default]
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const assert = require('node:assert/strict');
+const http = require('node:http');
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 (async () => {
     const base = path.resolve(__dirname, '..');
     const modelPath = path.resolve(process.argv[2]);
     assert.ok(fs.existsSync(modelPath));
+    const useDefault = process.argv.includes('--default');
+    let server;
+    let pageUrl = pathToFileURL(path.join(base, 'index.html')).href;
+    if (useDefault) {
+        // A project subdirectory catches absolute-path bugs before GitHub Pages deployment.
+        const prefix = '/trex-decision-tree-bot/';
+        server = http.createServer((request, response) => {
+            const pathname = new URL(request.url, 'http://localhost').pathname;
+            const filename = path.resolve(base, decodeURIComponent(pathname.slice(prefix.length)) || 'index.html');
+            if (!pathname.startsWith(prefix) || path.relative(base, filename).startsWith('..')) {
+                response.writeHead(404).end();
+                return;
+            }
+            fs.readFile(filename, (error, data) => {
+                if (error) { response.writeHead(404).end(); return; }
+                const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+                    '.json': 'application/json', '.png': 'image/png' };
+                response.writeHead(200, { 'Content-Type': types[path.extname(filename)] || 'application/octet-stream' });
+                response.end(data);
+            });
+        });
+        await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+        pageUrl = 'http://127.0.0.1:' + server.address().port + prefix;
+    }
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'trex-autoplay-'));
     const browser = spawn(process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', [
         '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
@@ -53,7 +78,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         await send('Page.enable');
         await send('Runtime.enable');
         await send('Emulation.setDeviceMetricsOverride', { width: 1100, height: 1000, deviceScaleFactor: 1, mobile: false });
-        await send('Page.navigate', { url: pathToFileURL(path.join(base, 'index.html')).href });
+        await send('Page.navigate', { url: pageUrl });
         let ready = false;
         for (let i = 0; i < 100; i++) {
             ready = await evaluate('!!(window.autoPlayer && window.gameRecorder && window.Runner && Runner.instance_.tRex)');
@@ -61,14 +86,21 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
             await pause(100);
         }
         assert.ok(ready, 'Game did not initialize');
-        const document = await send('DOM.getDocument');
-        const input = await send('DOM.querySelector', { nodeId: document.root.nodeId, selector: '#model-file' });
-        await send('DOM.setFileInputFiles', { nodeId: input.nodeId, files: [modelPath] });
+        if (useDefault) {
+            await evaluate("document.getElementById('model-default').click()");
+        } else {
+            const document = await send('DOM.getDocument');
+            const input = await send('DOM.querySelector', { nodeId: document.root.nodeId, selector: '#model-file' });
+            await send('DOM.setFileInputFiles', { nodeId: input.nodeId, files: [modelPath] });
+        }
         for (let i = 0; i < 50; i++) {
             if (await evaluate('!!autoPlayer.model')) break;
             await pause(100);
         }
         assert.ok(await evaluate('!!autoPlayer.model'), 'Model file not loaded');
+        if (useDefault) {
+            assert.match(await evaluate("document.getElementById('autoplay-status').textContent"), /Default model loaded/);
+        }
         await evaluate(`window.appliedActions = []; const originalApply = autoPlayer.apply;
             autoPlayer.apply = function(r, a) { appliedActions.push(a); return originalApply.call(this, r, a); };
             document.getElementById('record-toggle').click();
@@ -100,5 +132,6 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         }
         ws?.close();
         browser.kill();
+        if (server) await new Promise(resolve => server.close(resolve));
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });
