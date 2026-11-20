@@ -11,11 +11,15 @@
     <script src="game-state.js"></script>
     <script src="tree-model.js"></script>
     <script src="examples/trained-model/model.js"></script>
+    <script src="live-dashboard.js"></script>
     <script src="recorder.js"></script>
     <script src="autoplayer.js"></script>
 </head>
 
 <body id="t" class="offline">
+    <header class="page-heading"><p class="eyebrow">LEARN · PLAY · EXPLORE</p><h1>T-Rex Decision Lab</h1><p>Record your moves. Watch the tree think.</p></header>
+    <main class="dashboard-layout">
+    <div class="game-column">
     <div id="messageBox" class="sendmessage">
          <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Press Space to start</h1>
     </div>
@@ -55,11 +59,37 @@
         <p id="autoplay-status" role="status" aria-live="polite">No model loaded.</p>
         <p class="recording-note">Recording is disabled while the tree plays. After a collision, enable the autoplayer again to start another game.</p>
     </section>
+    </div>
+    <aside id="records-panel" class="live-panel records-panel" aria-labelledby="records-title">
+        <div class="panel-heading"><div><p class="eyebrow">LIVE DATA</p><h2 id="records-title">Recording stream</h2></div><span id="stream-state" class="state-badge">Idle</span></div>
+        <p id="stream-summary" class="panel-note">Start recording to inspect the latest 100 samples.</p>
+        <div id="records-empty" class="panel-empty">Your gameplay, one observation at a time.<br>Click <strong>Start recording</strong> to begin.</div>
+        <div id="records-scroll" class="records-scroll" tabindex="0" aria-label="Recorded samples, scroll to see all columns" hidden>
+            <table id="records-table"><caption class="sr-only">The 100 most recent recorded samples, newest first</caption><thead></thead><tbody></tbody></table>
+        </div>
+        <p class="panel-note">Newest first · All CSV columns · Export keeps every sample</p>
+    </aside>
+    <aside id="tree-panel" class="live-panel tree-panel" aria-labelledby="tree-title">
+        <div class="panel-heading"><div><p class="eyebrow">MODEL EXPLORER</p><h2 id="tree-title">Decision tree</h2></div><span id="tree-state" class="state-badge">Preview</span></div>
+        <p id="tree-summary" class="panel-note">Default model preview</p>
+        <div class="tree-toolbar" role="group" aria-label="Tree navigation">
+            <button id="tree-zoom-out" type="button" aria-label="Zoom out">−</button><output id="tree-zoom-level" aria-label="Tree zoom">100%</output><button id="tree-zoom-in" type="button" aria-label="Zoom in">+</button><button id="tree-fit" type="button">Fit tree</button>
+        </div>
+        <p class="panel-note">Zoom to read nodes · Drag to explore · T/F: true/false</p>
+        <div id="tree-viewport" class="tree-viewport" tabindex="0" aria-label="Complete decision tree. Drag or scroll to navigate; use plus and minus to zoom.">
+            <div id="tree-empty" class="panel-empty">Load a model to explore its complete tree.</div>
+            <svg id="decision-tree" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Complete decision tree" hidden></svg>
+        </div>
+        <div class="tree-legend"><span class="action-run">run</span><span class="action-duck">duck</span><span class="action-jump">jump</span><span>Highlighted = latest path</span></div>
+        <div class="latest-decision"><span class="eyebrow">LATEST DECISION</span><p id="decision-summary">Enable the autoplayer to see live decisions.</p><p id="decision-path" class="panel-note"></p></div>
+    </aside>
+    </main>
 </body>
 
 <script>
     document.onkeydown = function(evt) {
     evt = evt || window.event;
+    if (evt.target.closest && evt.target.closest('button, input, .live-panel')) return;
     if (evt.keyCode == 32) {
         var box = document.getElementById("messageBox");
         box.style.visibility="hidden";

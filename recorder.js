@@ -28,6 +28,7 @@
             this.toggle.setAttribute('aria-pressed', String(this.enabled));
             this.toggle.textContent = this.enabled ? 'Stop recording' : 'Start recording';
             this.render();
+            if (window.liveDashboard) window.liveDashboard.recording(this, COLUMNS);
             this.toggle.blur();
         }.bind(this));
         this.download.addEventListener('click', this.exportCSV.bind(this));
@@ -91,6 +92,7 @@
             Number(terminal)
         ]);
         this.dirty = true;
+        if (window.liveDashboard) window.liveDashboard.samples(this, COLUMNS);
         // Avoid announcing status on every frame to assistive technology.
         if (source !== 'frame' || this.rows.length % 20 === 1) this.render();
     };

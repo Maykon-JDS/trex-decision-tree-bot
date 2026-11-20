@@ -56,10 +56,12 @@
         this.disable('Loading model…');
         this.model = null;
         this.toggle.disabled = true;
+        if (window.liveDashboard) window.liveDashboard.setModel(null);
         this.load.disabled = true;
         this.defaultModel.disabled = true;
         try {
             this.model = window.TrexTree.validate(JSON.parse(await readText()));
+            if (window.liveDashboard) window.liveDashboard.setModel(this.model, name);
             this.toggle.disabled = false;
             this.status.textContent = name + ' loaded. Actions: ' + this.model.classes.join(', ') + '. Ready to play.';
         } catch (error) {
@@ -109,6 +111,7 @@
     };
 
     AutoPlayer.prototype.release = function (runner) {
+        if (window.liveDashboard) window.liveDashboard.pause();
         if (runner && runner.tRex) {
             if (this.action === 'jump') runner.tRex.endJump();
             runner.tRex.speedDrop = false;
@@ -135,9 +138,11 @@
         this.elapsed = 0;
         try {
             var state = window.TrexState.read(runner);
-            var action = window.TrexTree.predict(this.model, state);
+            var decision = window.TrexTree.trace(this.model, state);
+            var action = decision.action;
             var changed = this.action !== action;
             this.apply(runner, action);
+            if (window.liveDashboard) window.liveDashboard.decision(decision);
             if (changed) this.status.textContent = 'Autoplayer enabled. Action: ' + action + '. Esc: manual control.';
         } catch (error) {
             this.disable('Autoplayer stopped: ' + error.message);

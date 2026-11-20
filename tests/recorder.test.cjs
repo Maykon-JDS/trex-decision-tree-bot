@@ -87,3 +87,14 @@ test('keeps recording across games, handles empty horizons, pause and toggling',
     assert.equal(rows[2].action, 'run');
     assert.equal(rows.at(-1).episode_id, '2');
 });
+
+test('recording and CSV export retain more than the dashboard display limit', () => {
+    const { recorder, runner, elements, exported } = setup();
+    elements['record-toggle'].events.click();
+    for (let i = 0; i < 125; i++) recorder.sample(runner, 50);
+    recorder.end(runner);
+    recorder.exportCSV();
+    assert.equal(recorder.rows.length, 126);
+    assert.equal(exported().samples.length, 126);
+    assert.equal(exported().samples.at(-1).terminal, '1');
+});

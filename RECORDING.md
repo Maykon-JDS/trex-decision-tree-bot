@@ -8,6 +8,8 @@ For a local server, run `python -m http.server 8000` in this directory and open 
 3. Play as many games as you like. Recording continues after a collision and restart.
 4. Click **Stop recording**, then **Download CSV**.
 
+The **Recording stream** panel displays the latest 100 samples in real time, newest first, with all CSV columns. Scroll horizontally to inspect every field. Stopping recording freezes the display; resuming continues the existing history. The 100-row limit affects only the display: CSV downloads still include every recorded sample. The panel appears beside the game on wide screens and below it on smaller screens.
+
 The file includes all samples collected in the current tab, even if you stop and restart recording. Downloading does not clear samples. Data is held in memory: download it before refreshing or closing the page. You can download while recording; the file contains all data collected up to that point.
 
 ## CSV format

@@ -37,9 +37,10 @@
         return model;
     }
 
-    function predict(model, state) {
+    function traverse(model, state, path) {
         var index = 0;
         for (var steps = 0; steps < model.nodes.length; steps++) {
+            if (path) path.push(index);
             var node = model.nodes[index];
             if (node.left === -1) return node.action;
             var name = model.feature_names[node.feature];
@@ -55,7 +56,12 @@
         }
         throw new Error('Unable to traverse the tree.');
     }
-    var api = { validate: validate, predict: predict };
+    function predict(model, state) { return traverse(model, state); }
+    function trace(model, state) {
+        var path = [];
+        return { action: traverse(model, state, path), path: path };
+    }
+    var api = { validate: validate, predict: predict, trace: trace };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.TrexTree = api;
 })(typeof window !== 'undefined' ? window : globalThis);

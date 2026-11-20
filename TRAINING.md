@@ -64,6 +64,8 @@ The game starts and queries the tree approximately every 50 ms. A Python server 
 
 The panel displays the current action. Click **Disable autoplayer** or press **Esc** to return to manual control. The game pauses when you switch tabs. After a collision, the autoplayer is disabled; enable it again to start another attempt.
 
+The **Decision tree** explorer shows every node and branch of the loaded model. Use **+**, **−**, **Fit tree**, scrolling or dragging to navigate. During automatic play, the latest decision path is highlighted with pulsing nodes, and the chosen action and visited node IDs appear below it. Pausing stops the animation and keeps the last path visible. Reduced-motion settings replace animation with a static highlight. The explorer also supports a model consisting of a single leaf.
+
 Enabling the tree stops manual recording and disables the recording button until the autoplayer is turned off. Previously recorded manual samples are preserved and can still be downloaded. This prevents model commands from being mixed with your demonstrations.
 
 ### Export an existing training run

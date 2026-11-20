@@ -680,7 +680,7 @@
                 if (e.keyCode === 27) window.autoPlayer.disable('Autoplayer disabled.');
                 else return;
             }
-            if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls')) return;
+            if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls, .live-panel')) return;
             if (window.gameRecorder) window.gameRecorder.input(this, e, true);
             // Prevent native page scrolling whilst tapping on mobile.
             if (IS_MOBILE && this.playing) {
@@ -733,7 +733,7 @@
                 if (e.keyCode === 27) window.autoPlayer.disable('Autoplayer disabled.');
                 else return;
             }
-            if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls')) return;
+            if (e.target.closest && e.target.closest('#recording-controls, #autoplay-controls, .live-panel')) return;
             if (window.gameRecorder) window.gameRecorder.input(this, e, false);
             var keyCode = String(e.keyCode);
             var isjumpKey = Runner.keycodes.JUMP[keyCode] ||

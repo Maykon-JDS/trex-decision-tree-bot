@@ -77,7 +77,9 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         };
         await send('Page.enable');
         await send('Runtime.enable');
-        await send('Emulation.setDeviceMetricsOverride', { width: 1100, height: 1000, deviceScaleFactor: 1, mobile: false });
+        const initiallyMobile = process.argv.includes('--mobile');
+        if (initiallyMobile) await send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36', platform: 'Android' });
+        await send('Emulation.setDeviceMetricsOverride', { width: initiallyMobile ? 390 : 1680, height: initiallyMobile ? 844 : 1100, deviceScaleFactor: 1, mobile: initiallyMobile });
         await send('Page.navigate', { url: pageUrl });
         let ready = false;
         for (let i = 0; i < 100; i++) {
@@ -86,6 +88,30 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
             await pause(100);
         }
         assert.ok(ready, 'Game did not initialize');
+        assert.ok(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Initial page overflows horizontally');
+        assert.equal(await evaluate('document.querySelectorAll(".tree-node").length'), await evaluate('TrexDefaultModel.nodes.length'));
+        await evaluate(`document.getElementById('record-toggle').click();
+            for (let i = 0; i < 125; i++) gameRecorder.sample(Runner.instance_, 50);
+            gameRecorder.end(Runner.instance_);`);
+        await pause(160);
+        assert.deepEqual(await evaluate(`({ count: document.querySelectorAll('#records-table tbody tr').length,
+            total: gameRecorder.rows.length,
+            newest: document.querySelector('#records-table tbody tr').dataset.sample,
+            columns: document.querySelectorAll('#records-table thead th').length })`),
+            { count: 100, total: 126, newest: '126', columns: 22 });
+        await evaluate("document.getElementById('record-toggle').click()");
+        const oldScale = await evaluate('liveDashboard.scale');
+        await evaluate("document.getElementById('tree-zoom-in').click()");
+        assert.ok(await evaluate('liveDashboard.scale') > oldScale);
+        await evaluate("document.getElementById('tree-fit').click()");
+        await evaluate(`document.getElementById('record-toggle').click(); gameRecorder.sample(Runner.instance_, 50); document.getElementById('record-toggle').click();`);
+        assert.equal(await evaluate('document.querySelector("#records-table tbody tr").dataset.sample'), '127');
+        assert.equal(await evaluate('document.querySelectorAll("#records-table tbody tr").length'), 100);
+        await evaluate("document.getElementById('tree-viewport').focus()");
+        await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+        await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+        assert.equal(await evaluate('Runner.instance_.playing'), false, 'Explorer keyboard input started the game');
+        await evaluate('document.activeElement.blur()');
         if (useDefault) {
             await evaluate("window.fetch = function () { throw new Error('Default model must work without fetch'); }");
             await evaluate("document.getElementById('model-default').click()");
@@ -102,6 +128,15 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         if (useDefault) {
             assert.match(await evaluate("document.getElementById('autoplay-status').textContent"), /Default model loaded/);
         }
+        await evaluate(`(async () => { window.checkedModel = autoPlayer.model;
+            const oneLeaf = { ...autoPlayer.model, nodes: [{ left: -1, right: -1, feature: -2, threshold: -2, action: 'run' }] };
+            await autoPlayer.loadFile({ name: 'single-leaf.json', size: 200, text: async () => JSON.stringify(oneLeaf) }); })()`);
+        assert.equal(await evaluate('document.querySelectorAll(".tree-node").length'), 1);
+        assert.equal(await evaluate('document.querySelectorAll(".tree-edge").length'), 0);
+        await evaluate(`autoPlayer.loadFile({ name: 'invalid.json', size: 10, text: async () => '{}' })`);
+        assert.equal(await evaluate('document.querySelectorAll(".tree-node").length'), 0);
+        assert.equal(await evaluate('document.getElementById("decision-tree").hasAttribute("hidden")'), true);
+        await evaluate(`autoPlayer.loadFile({ name: 'restored.json', size: 1000, text: async () => JSON.stringify(checkedModel) })`);
         await evaluate(`window.appliedActions = []; const originalApply = autoPlayer.apply;
             autoPlayer.apply = function(r, a) { appliedActions.push(a); return originalApply.call(this, r, a); };
             document.getElementById('record-toggle').click();
@@ -114,8 +149,21 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         assert.ok(result.actions.length > 0, JSON.stringify(result));
         assert.equal(result.recording, false);
         assert.ok(result.actions.every(action => ['run', 'duck', 'jump'].includes(action)));
+        assert.ok(await evaluate('!!liveDashboard.lastDecision'));
+        assert.equal(await evaluate('liveDashboard.lastDecision.action'), result.actions.at(-1));
+        assert.equal(await evaluate('document.querySelectorAll(".tree-node.on-path").length'), await evaluate('liveDashboard.lastDecision.path.length'));
+        assert.equal(await evaluate('document.querySelectorAll(".tree-edge").length'), await evaluate('autoPlayer.model.nodes.length - 1'));
+        assert.ok(await evaluate('!document.getElementById("decision-tree").hasAttribute("hidden")'));
+        assert.deepEqual(await evaluate('Array.from(document.querySelectorAll(".tree-node.on-path"), node => Number(node.dataset.node)).sort((a,b) => a-b)'), await evaluate('liveDashboard.lastDecision.path.slice().sort((a,b) => a-b)'));
+        await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+        assert.equal(await evaluate('getComputedStyle(document.querySelector(".tree-node.on-path rect")).animationName'), 'none');
+        await send('Emulation.setEmulatedMedia', { features: [] });
+        await evaluate('Runner.instance_.stop()');
+        assert.equal(await evaluate('liveDashboard.svg.classList.contains("is-evaluating")'), false);
+        await evaluate('Runner.instance_.play()');
         await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
         assert.equal(await evaluate('autoPlayer.enabled'), false);
+        assert.equal(await evaluate('liveDashboard.svg.classList.contains("is-evaluating")'), false);
         assert.equal(await evaluate("document.getElementById('record-toggle').disabled"), false);
         await evaluate("document.getElementById('autoplay-toggle').click(); Runner.instance_.gameOver();");
         assert.equal(await evaluate('autoPlayer.enabled'), false);
@@ -125,6 +173,15 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         const screenshot = await send('Page.captureScreenshot', { format: 'png' });
         const screenshotPath = path.join(base, '.venv', 'autoplay-smoke.png');
         fs.writeFileSync(screenshotPath, Buffer.from(screenshot.data, 'base64'));
+        await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+        await pause(500);
+        assert.ok(await evaluate('document.documentElement.scrollWidth <= 390'), 'Mobile page overflows horizontally: ' + JSON.stringify(await evaluate(`Array.from(document.querySelectorAll('body *')).filter(e => e.getBoundingClientRect().right > 391 && getComputedStyle(e).position !== 'absolute').slice(0, 8).map(e => ({tag:e.tagName, id:e.id, width:e.getBoundingClientRect().width, right:e.getBoundingClientRect().right}))`)));
+        const mobileScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+        fs.writeFileSync(path.join(base, '.venv', 'dashboard-mobile.png'), Buffer.from(mobileScreenshot.data, 'base64'));
+        await evaluate("document.getElementById('records-panel').scrollIntoView()");
+        await pause(150);
+        const recordsScreenshot = await send('Page.captureScreenshot', { format: 'png' });
+        fs.writeFileSync(path.join(base, '.venv', 'dashboard-mobile-records.png'), Buffer.from(recordsScreenshot.data, 'base64'));
         assert.deepEqual(errors, [], 'Uncaught browser errors');
         console.log(JSON.stringify({ result: 'Browser integration passed', decisions: result.actions.length, screenshot: screenshotPath }));
     } finally {

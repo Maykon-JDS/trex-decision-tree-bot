@@ -17,6 +17,7 @@
   - [Introduction](#introduction)
   - [Technologies Used](#technologies-used)
   - [Decision Tree Concepts](#decision-tree-concepts)
+  - [Live Dashboard](#live-dashboard)
   - [Mathematical Formulas](#mathematical-formulas)
   - [Simple Example: Two Inputs and Three Actions](#simple-example-two-inputs-and-three-actions)
   - [How to Run the Project](#how-to-run-the-project)
@@ -88,6 +89,16 @@ In this implementation, categorical obstacle types are encoded using `DictVector
 The trainer excludes `action`, `jump_pressed` and `duck_pressed` from the inputs because they reveal the target command. It also excludes identifiers, elapsed time, total distance, `source` and `terminal`. Collision samples and the sample immediately before each collision in the same segment are discarded. Missing obstacle measurements become `-1`.
 
 The final model is limited to 128 leaves. The requested maximum depth defaults to 16 and must be between 1 and 24. These limits constrain tree growth; they do not guarantee good generalization.
+
+## Live Dashboard
+
+The page places a **Recording stream** beside the game and a **Decision tree** explorer on the other side. On smaller screens, the panels move below the game.
+
+- **Recording stream:** click **Start recording** to see the latest 100 samples, newest first, with every CSV column. Scroll horizontally to inspect all fields. New observations are highlighted; stopping recording keeps the table visible. The display limit does not remove data from your CSV export.
+- **Decision tree:** the complete default model is shown as a preview. Loading the default model or importing your own JSON displays that model's entire tree, including every branch and leaf. Use **+**, **−**, **Fit tree**, scrolling or dragging to explore it. With the explorer focused, use **+**, **−** or **0** to zoom or fit.
+- **Live decisions:** while the autoplayer runs, green connections and pulsing nodes show the latest actual root-to-leaf path. The selected action and visited node IDs appear below the diagram. This visualization follows inference without slowing the game. Pausing or stopping keeps the last path visible without pulsing; changing models clears it.
+
+The dashboard works offline when opening `index.html` directly. Reduced-motion preferences disable pulsing and arrival animations while preserving the highlighted path.
 
 ## Mathematical Formulas
 
@@ -359,6 +370,7 @@ On macOS / Linux, use `.venv/bin/python` instead of the Windows interpreter path
 ├── recorder.js                # Gameplay recording and CSV export
 ├── tree-model.js              # Exported model validation and prediction
 ├── autoplayer.js              # Apply predicted actions to the game
+├── live-dashboard.js          # Live recording table and complete SVG tree explorer
 ├── train_tree.py              # Training, validation and diagram generation
 ├── training_app.py            # Graphical training interface
 ├── export_model.py            # Python-to-JSON model export

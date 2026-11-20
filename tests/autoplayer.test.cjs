@@ -57,6 +57,32 @@ test('keeps nearest obstacle geometry and empty values consistent with recording
     assert.equal(state.read(runner).obstacle_type, 'PTERODACTYL');
 });
 
+test('trace follows actual branches and preserves prediction semantics', () => {
+    const model = leaf();
+    model.feature_names = ['obstacle_distance', 'obstacle_type=CACTUS_SMALL'];
+    model.nodes = [
+        { left: 1, right: 2, feature: 0, threshold: 100, action: null },
+        { left: 3, right: 4, feature: 1, threshold: 0.5, action: null },
+        { left: -1, right: -1, action: 'run' },
+        { left: -1, right: -1, action: 'duck' },
+        { left: -1, right: -1, action: 'jump' }
+    ];
+    tree.validate(model);
+    for (const [probe, expectedPath, expectedAction] of [
+        [{ obstacle_distance: 200 }, [0, 2], 'run'],
+        [{ obstacle_distance: 50, obstacle_type: 'CACTUS_SMALL' }, [0, 1, 4], 'jump'],
+        [{ obstacle_distance: null, obstacle_type: 'UNKNOWN' }, [0, 1, 3], 'duck'],
+        [{ obstacle_distance: 100 + 1e-7, obstacle_type: 'CACTUS_SMALL' }, [0, 1, 4], 'jump']
+    ]) {
+        const result = tree.trace(model, probe);
+        assert.deepEqual(result.path, expectedPath);
+        assert.equal(result.action, expectedAction);
+        assert.equal(result.action, tree.predict(model, probe));
+    }
+    assert.throws(() => tree.trace(model, { obstacle_distance: NaN }), /Invalid game state/);
+    assert.deepEqual(tree.trace(leaf('jump'), {}), { action: 'jump', path: [0] });
+});
+
 test('releases jumps, supports duck and speed drop, and preserves a held jump', () => {
     const { bot, runner } = setup();
     bot.apply(runner, 'jump');
